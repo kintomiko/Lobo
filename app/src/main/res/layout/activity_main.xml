@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/etTextHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="top"
+        android:inputType="textMultiLine"
+        android:lines="3"
+        android:hint="@string/etSearchHint" />
+
+    <Spinner
+        android:id="@+id/sNoOfMatches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:entries="@array/saNoOfMatches"
+        android:prompt="@string/sNoOfMatches" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/tvTextMatches"
+        android:textStyle="bold" />
+
+    <ListView
+        android:id="@+id/lvTextMatches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
