@@ -6,31 +6,13 @@
     tools:context=".MainActivity"
     android:orientation="vertical">
 
-    <EditText
-        android:id="@+id/etTextHint"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="top"
-        android:inputType="textMultiLine"
-        android:lines="3"
-        android:hint="@string/etSearchHint" />
-
-    <Spinner
-        android:id="@+id/sNoOfMatches"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:entries="@array/saNoOfMatches"
-        android:prompt="@string/sNoOfMatches" />
-
     <TextView
-        android:layout_width="match_parent"
+        android:id="@+id/etTextHint"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/tvTextMatches"
-        android:textStyle="bold" />
+        android:layout_gravity="center_horizontal"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:typeface="sans" />
 
-    <ListView
-        android:id="@+id/lvTextMatches"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
 
 </LinearLayout>

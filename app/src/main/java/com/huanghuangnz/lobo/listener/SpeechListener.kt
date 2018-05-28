@@ -3,13 +3,15 @@ package com.huanghuangnz.lobo.listener
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 import android.widget.EditText
+import android.widget.TextView
 import org.apache.commons.lang3.StringUtils
 import java.util.ArrayList
 
-class SpeechListener(val mSpeechRecognizer: SpeechRecognizer, val mSpeechIntent: Intent, val metTextHint: EditText) : RecognitionListener {
+class SpeechListener(val mSpeechRecognizer: SpeechRecognizer, val mSpeechIntent: Intent, val metTextHint: TextView) : RecognitionListener {
 
     private val TAG = this.javaClass.canonicalName
 
@@ -69,11 +71,34 @@ class SpeechListener(val mSpeechRecognizer: SpeechRecognizer, val mSpeechIntent:
         VALID_COMMANDS.forEach { command ->
             matches.forEach { match ->
                 if (StringUtils.getLevenshteinDistance(command, match) < MATCH_THREADHOLD){
-                    metTextHint.text.clear()
-                    metTextHint.text.insert(0, command)
+                    metTextHint.clearComposingText()
+                    metTextHint.text = command
                 }
             }
         }
+    }
+
+    private fun getSpeechRecognizeIntent(partialResult: Boolean = false): Intent {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+
+        // Specify the calling package to identify your application
+        intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, javaClass
+                .`package`.name)
+
+        // Given an hint to the recognizer about what the user is going to say
+        //There are two form of language model available
+        //1.LANGUAGE_MODEL_WEB_SEARCH : For short phrases
+        //2.LANGUAGE_MODEL_FREE_FORM  : If not sure about the words or phrases and its domain.
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_WEB_SEARCH)
+
+        // Specify how many results you want to receive. The results will be
+        // sorted where the first result is the one with higher confidence.
+        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 20)
+        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, partialResult)
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 500)
+        intent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, 500)
+        return intent
     }
 
 }
