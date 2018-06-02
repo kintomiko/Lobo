@@ -37,3 +37,28 @@ sphinx_fe -argfile cn-zh-ptm/feat.params \
     -varfn cn-zh-ptm/variances \
     -outmllrfn mllr_matrix -accumdir .
 ```
+
+## Updating the acoustic model files with MAP
+
+```
+/usr/local/libexec/sphinxtrain/map_adapt \
+    -moddeffn cn-zh-ptm/mdef \
+    -ts2cbfn .ptm. \
+    -meanfn cn-zh-ptm/means \
+    -varfn cn-zh-ptm/variances \
+    -mixwfn cn-zh-ptm/mixture_weights \
+    -tmatfn cn-zh-ptm/transition_matrices \
+    -accumdir . \
+    -mapmeanfn cn-zh-ptm-adapt/means \
+    -mapvarfn cn-zh-ptm-adapt/variances \
+    -mapmixwfn cn-zh-ptm-adapt/mixture_weights \
+    -maptmatfn cn-zh-ptm-adapt/transition_matrices
+```
+
+```
+/usr/local/libexec/sphinxtrain/mk_s2sendump \
+    -pocketsphinx yes \
+    -moddeffn cn-zh-ptm-adapt/mdef \
+    -mixwfn cn-zh-ptm-adapt/mixture_weights \
+    -sendumpfn cn-zh-ptm-adapt/sendump
+```

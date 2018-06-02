@@ -138,7 +138,6 @@ class MainActivity : Activity(), edu.cmu.pocketsphinx.RecognitionListener {
                 .setAcousticModel(File(assetsDir, "cn-zh-ptm"))
                 .setDictionary(File(assetsDir, "zh_broadcastnews_utf8.dic"))
                 .setString("-mllr", File(assetsDir, "mllr_matrix").path)
-                .setRawLogDir(assetsDir) // To disable logging of raw audio comment out this call (takes a lot of space on the device)
                 .recognizer
 
         recognizer.addListener(this)
