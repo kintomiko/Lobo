@@ -1,5 +1,7 @@
 cn-zh-ptm/feat.params
+cn-zh-ptm/mdef
 cn-zh-ptm/means
+cn-zh-ptm/mixture_weights
 cn-zh-ptm/noisedict
 cn-zh-ptm/sendump
 cn-zh-ptm/transition_matrices
