@@ -11,3 +11,5 @@
 
 **/*.md5
 models/build
+
+**/.idea
