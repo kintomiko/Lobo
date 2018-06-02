@@ -8,3 +8,7 @@
 /build
 /captures
 .externalNativeBuild
+
+**/*.md5
+models/build
+voice_training/models

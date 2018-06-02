@@ -1,1 +1,1 @@
-include ':app', ':models', ':aars'
+include ':app', ':models', ':aars', ':voice_training'
