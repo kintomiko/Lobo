@@ -9,7 +9,7 @@ https://cmusphinx.github.io/wiki/tutorialadapt/#creating-an-adaptation-corpus
 
 ```
 sphinx_fe -argfile cn-zh-ptm/feat.params \
-        -samprate 16000 -c arctic14.fileids \
+        -samprate 16000 -c arctic.fileids \
        -di . -do . -ei wav -eo mfc -mswav yes
 ```
 
@@ -24,8 +24,8 @@ sphinx_fe -argfile cn-zh-ptm/feat.params \
  -cmn current \
  -agc none \
  -dictfn zh_broadcastnews_utf8.dic \
- -ctlfn arctic14.fileids \
- -lsnfn arctic14.transcription \
+ -ctlfn arctic.fileids \
+ -lsnfn arctic.transcription \
  -accumdir .
 ```
 
@@ -41,6 +41,8 @@ sphinx_fe -argfile cn-zh-ptm/feat.params \
 ## Updating the acoustic model files with MAP
 
 ```
+cp -a cn-zh-ptm cn-zh-ptm-adapt
+
 /usr/local/libexec/sphinxtrain/map_adapt \
     -moddeffn cn-zh-ptm/mdef \
     -ts2cbfn .ptm. \
