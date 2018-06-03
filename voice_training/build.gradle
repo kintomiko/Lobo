@@ -130,3 +130,21 @@ task buildAdaptModel(dependsOn: updateModelMAP){
         println 'start building model with $profileDir'
     }
 }
+
+task updateAppModel(dependsOn: buildAdaptModel){
+    doFirst {
+        println 'Updating App Adapted model'
+    }
+
+    doLast{
+        copy {
+            from "tmp/cn-zh-ptm-adapt"
+            into '../models/src/main/assets/sync/cn-zh-ptm'
+        }
+
+        copy {
+            from "tmp/mllr_matrix"
+            into '../models/src/main/assets/sync'
+        }
+    }
+}
