@@ -10,3 +10,7 @@
 models/build
 
 **/.idea
+**/assets.lst
+voice_training/linxiaoxi
+voice_training/linyuan
+voice_training/tmp

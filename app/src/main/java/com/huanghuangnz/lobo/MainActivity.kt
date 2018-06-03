@@ -2,26 +2,35 @@ package com.huanghuangnz.lobo
 
 import android.Manifest
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.Bundle
-import android.os.Handler
 import android.os.Message
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
-import android.view.View
 import android.widget.*
 import com.huanghuangnz.lobo.bluetooth.BluetoothAsyncManager
 import com.huanghuangnz.lobo.bluetooth.BluetoothEventListener
-import com.huanghuangnz.lobo.listener.CommandListener
-import com.huanghuangnz.lobo.listener.VoiceCommandManager
+import com.huanghuangnz.lobo.tts.VoiceSynthesizer
+import com.huanghuangnz.lobo.voicerecognization.CommandListener
+import com.huanghuangnz.lobo.voicerecognization.VoiceCommandManager
 import edu.cmu.pocketsphinx.Assets
+import java.io.File
 
 private const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
 
 class MainActivity : Activity() {
 
     val TAG = this.javaClass.canonicalName
+
+    private fun media(file: File): MediaPlayer{
+        return MediaPlayer().let {
+            it.setDataSource(file.path)
+            it.prepare()
+            it
+        }
+    }
+
 
     //GUI components
     private lateinit var metTextHint: TextView
@@ -31,6 +40,8 @@ class MainActivity : Activity() {
     private lateinit var mSendA: Button
     private lateinit var mBluetoothStatus: TextView
     private lateinit var mReadBuffer: TextView
+
+    private val voiceSynthesizer = VoiceSynthesizer(this)
 
     private val btConnectManager = BluetoothAsyncManager(this,
             object: BluetoothEventListener{
@@ -53,11 +64,14 @@ class MainActivity : Activity() {
     private val voiceRecognizerListener = VoiceCommandManager(
             object: CommandListener{
                 override fun onWakeUp(assistant: String) {
-                    showToastMessage("Perform assistant $assistant")
+                    showToastMessage("现在是${assistant}为您服务")
                 }
 
                 override fun onActionConfirm(action: String) {
                     showToastMessage("正在执行：$action")
+                    if (action.contains("开门")) {
+                        btConnectManager.sendMessage("A")
+                    }
                 }
 
                 override fun onListening(){
@@ -69,7 +83,9 @@ class MainActivity : Activity() {
                 }
 
                 override fun onAction(keyWord: String) {
-                    metTextHint.text = "请说出密码来确认执行: $keyWord"
+                    val msg = "请说出密码来确认执行: $keyWord"
+                    metTextHint.text = msg
+                    showToastMessage(msg)
                 }
             }
     )
@@ -96,6 +112,7 @@ class MainActivity : Activity() {
 
         voiceRecognizerListener.init(Assets(this).syncAssets())
         btConnectManager.init()
+        voiceSynthesizer.init()
 
         mDevicesListView = findViewById(R.id.devicesListView) as ListView
         mDevicesListView.adapter = btConnectManager.mBTArrayAdapter // assign model to view
@@ -121,7 +138,7 @@ class MainActivity : Activity() {
             return@OnItemClickListener
         }
 
-        mBluetoothStatus.setText("Connecting...")
+        mBluetoothStatus.text = "Connecting..."
         // Get the device MAC address, which is the last 17 chars in the View
         val info = (v as TextView).text.toString()
         val address = info.substring(info.length - 17)
@@ -156,6 +173,7 @@ class MainActivity : Activity() {
      **/
     private fun showToastMessage(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+        voiceSynthesizer.speak(message)
     }
 
 
