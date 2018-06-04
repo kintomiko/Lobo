@@ -57,21 +57,20 @@ class VoiceCommandManager constructor(val commandListener: CommandListener): edu
         }
         // to secret search
         actions.find { it.name == keyWord }?.let {
-            when {
-                it.isAssistant -> {
-                    commandListener.onWakeUp(it)
-                    recognizer.stop()
-                }
-                it.isSecured -> {
-                    currentAction = it
-                    commandListener.onPendingConfirm(it)
-                    switchSearch(sSearch)
-                }
-                !it.isSecured -> {
-                    commandListener.onActionConfirm(it)
-                }
-                else -> switchSearch(kwSearch)
+            if (it.isAssistant) {
+                commandListener.onWakeUp(it)
+                switchSearch(kwSearch)
             }
+            else if (it.isSecured) {
+                currentAction = it
+                commandListener.onPendingConfirm(it)
+                switchSearch(sSearch)
+            }
+            else if (!it.isSecured) {
+                commandListener.onActionConfirm(it)
+                switchSearch(kwSearch)
+            }
+            else switchSearch(kwSearch)
         }
 
     }

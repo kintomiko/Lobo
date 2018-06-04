@@ -12,6 +12,7 @@ import android.widget.*
 import com.huanghuangnz.lobo.connectors.GarageDoorOpenerConnector
 import com.huanghuangnz.lobo.connectors.GarageDoorOpenerConnectListener
 import com.huanghuangnz.lobo.connectors.YeelightConnector
+import com.huanghuangnz.lobo.connectors.YeelightConnectorListener
 import com.huanghuangnz.lobo.tts.VoiceSynthesizer
 import com.huanghuangnz.lobo.voicerecognization.Action
 import com.huanghuangnz.lobo.voicerecognization.CommandListener
@@ -30,12 +31,20 @@ class MainActivity : Activity() {
     private lateinit var mDevicesListView: ListView
     private lateinit var mDiscoverBtn: Button
     private lateinit var mSendA: Button
+    private lateinit var mToggleLight: Button
     private lateinit var mBluetoothStatus: TextView
+    private lateinit var mLightStatus: TextView
     private lateinit var mListView: ListView
 
     private val voiceSynthesizer = VoiceSynthesizer(this)
 
-    private val yeelightConnector = YeelightConnector(this)
+    private val yeelightConnector = YeelightConnector(this,
+            object: YeelightConnectorListener {
+                override fun onConnect(obj: HashMap<String, String>) {
+                    mLightStatus.text = "Connected to Device: $obj"
+                }
+            }
+    )
 
     private val garageDoorOpenerConnector = GarageDoorOpenerConnector(this,
             object : GarageDoorOpenerConnectListener {
@@ -73,7 +82,7 @@ class MainActivity : Activity() {
                 }
 
                 override fun onActionConfirm(action: Action) {
-                    showToastMessage("正在执行：$action")
+                    showToastMessage("正在执行：${action.name}")
                     when {
                         action.name.contains("开门") -> garageDoorOpenerConnector.sendMessage("A")
                         action.name.contains("关门") -> garageDoorOpenerConnector.sendMessage("A")
@@ -120,13 +129,16 @@ class MainActivity : Activity() {
         voiceRecognizerListener.init(Assets(this).syncAssets())
         garageDoorOpenerConnector.init()
         voiceSynthesizer.init()
+        yeelightConnector.init()
 
         mDevicesListView = findViewById(R.id.devicesListView) as ListView
         mDevicesListView.adapter = garageDoorOpenerConnector.mBTArrayAdapter // assign model to view
         mDevicesListView.onItemClickListener = mDeviceClickListener
         mBluetoothStatus = findViewById(R.id.bluetoothStatus) as TextView
+        mLightStatus = findViewById(R.id.lightStatus) as TextView
         mDiscoverBtn = findViewById(R.id.discover) as Button
         mSendA = findViewById(R.id.sendA) as Button
+        mToggleLight = findViewById(R.id.toggleLight) as Button
 
         mDiscoverBtn.setOnClickListener({ v ->
             garageDoorOpenerConnector.discover(v)
@@ -137,9 +149,12 @@ class MainActivity : Activity() {
             garageDoorOpenerConnector.sendMessage("A")
         })
 
+        mToggleLight.setOnClickListener({
+            yeelightConnector.toggle()
+        })
+
         mListView = findViewById(R.id.lightList) as ListView
         mListView.adapter = yeelightConnector.mAdapter
-
         mListView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
             yeelightConnector.connect(yeelightConnector.mAdapter.getItem(position) as HashMap<String, String>)
         }

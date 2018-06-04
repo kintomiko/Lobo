@@ -36,7 +36,7 @@ private const val CMD_TOGGLE = "{\"id\":%id,\"method\":\"toggle\",\"params\":[]}
 private const val CMD_ON = "{\"id\":%id,\"method\":\"set_power\",\"params\":[\"on\",\"smooth\",500]}\r\n"
 private const val CMD_OFF = "{\"id\":%id,\"method\":\"set_power\",\"params\":[\"off\",\"smooth\",500]}\r\n"
 
-class YeelightConnector(val context: Context) : DeviceConnector{
+class YeelightConnector(val context: Context, val listener: YeelightConnectorListener) : DeviceConnector{
 
     private val TAG = this.javaClass.canonicalName
 
@@ -47,16 +47,17 @@ class YeelightConnector(val context: Context) : DeviceConnector{
 
     override fun turn(on: Boolean) {
         if (on) {
-            write(CMD_ON)
+            write(CMD_ON.replace("%id", (++mCmdId).toString()))
         } else {
-            write(CMD_OFF)
+            write(CMD_OFF.replace("%id", (++mCmdId).toString()))
         }
     }
 
     override fun toggle() {
-        write(CMD_TOGGLE)
+        write(CMD_TOGGLE.replace("%id", (++mCmdId).toString()))
     }
 
+    private var mCmdId: Int = 0
     private var mDeviceList: MutableList<HashMap<String, String>> = ArrayList()
     lateinit var mAdapter: MyAdapter
     private var mSeraching = true
@@ -86,10 +87,11 @@ class YeelightConnector(val context: Context) : DeviceConnector{
 
     fun discover() {
 
+        Toast.makeText(context, "开始搜索Yeelight灯泡", Toast.LENGTH_SHORT).show()
+
         mDeviceList.clear()
         mAdapter.notifyDataSetChanged()
         mSeraching = true
-
         mSearchThread.start()
 
     }
@@ -104,6 +106,7 @@ class YeelightConnector(val context: Context) : DeviceConnector{
                 mDSocket.send(dpSend)
                 mHandler.sendEmptyMessageDelayed(MSG_STOP_SEARCH, 2000)
                 while (mSeraching) {
+                    Log.i(TAG, "正在搜索灯泡")
                     val buf = ByteArray(1024)
                     val dpRecv = DatagramPacket(buf, buf.size)
                     mDSocket.receive(dpRecv)
@@ -229,6 +232,7 @@ class YeelightConnector(val context: Context) : DeviceConnector{
                 throw RuntimeException(e)
             }
         }).start()
+        listener.onConnect(bulbInfo)
     }
 
     fun destroy(){
@@ -244,6 +248,6 @@ class YeelightConnector(val context: Context) : DeviceConnector{
 
 }
 
-class YeelightConnectorListener {
-
+interface YeelightConnectorListener {
+    fun onConnect(bulbInfo: HashMap<String, String>)
 }
