@@ -2,20 +2,22 @@ package com.huanghuangnz.lobo
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Message
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.widget.*
-import com.huanghuangnz.lobo.bluetooth.BluetoothAsyncManager
-import com.huanghuangnz.lobo.bluetooth.BluetoothEventListener
+import com.huanghuangnz.lobo.connectors.GarageDoorOpenerConnector
+import com.huanghuangnz.lobo.connectors.GarageDoorOpenerConnectListener
+import com.huanghuangnz.lobo.connectors.YeelightConnector
 import com.huanghuangnz.lobo.tts.VoiceSynthesizer
+import com.huanghuangnz.lobo.voicerecognization.Action
 import com.huanghuangnz.lobo.voicerecognization.CommandListener
 import com.huanghuangnz.lobo.voicerecognization.VoiceCommandManager
 import edu.cmu.pocketsphinx.Assets
-import java.io.File
+import java.util.*
 
 private const val PERMISSIONS_REQUEST_RECORD_AUDIO = 1
 
@@ -23,54 +25,60 @@ class MainActivity : Activity() {
 
     val TAG = this.javaClass.canonicalName
 
-    private fun media(file: File): MediaPlayer{
-        return MediaPlayer().let {
-            it.setDataSource(file.path)
-            it.prepare()
-            it
-        }
-    }
-
-
     //GUI components
     private lateinit var metTextHint: TextView
     private lateinit var mDevicesListView: ListView
     private lateinit var mDiscoverBtn: Button
-    private lateinit var mListPairedDevicesBtn: Button
     private lateinit var mSendA: Button
     private lateinit var mBluetoothStatus: TextView
-    private lateinit var mReadBuffer: TextView
+    private lateinit var mListView: ListView
 
     private val voiceSynthesizer = VoiceSynthesizer(this)
 
-    private val btConnectManager = BluetoothAsyncManager(this,
-            object: BluetoothEventListener{
+    private val yeelightConnector = YeelightConnector(this)
+
+    private val garageDoorOpenerConnector = GarageDoorOpenerConnector(this,
+            object : GarageDoorOpenerConnectListener {
                 override fun onConnectionFailed(msg: Message) {
                     mBluetoothStatus.text = "Connection Failed"
                 }
-
                 override fun onConnect(obj: Any) {
                     mBluetoothStatus.text = "Connected to Device: $obj"
                 }
-
                 override fun onReadMessage(readMessage: String) {
-                    mReadBuffer.text = readMessage
+                    mBluetoothStatus.text = "${mBluetoothStatus.text}readMessage"
                 }
-
             }
-
     )
+
+    private val XIAOAI_PACKAGENAME = "com.miui.voiceassist"
+
+    private val START_XIAOAI_REQUEST_CODE: Int = Random().nextInt()
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == START_XIAOAI_REQUEST_CODE) {
+            voiceRecognizerListener.switchSearch(voiceRecognizerListener.kwSearch)
+        }
+    }
 
     private val voiceRecognizerListener = VoiceCommandManager(
             object: CommandListener{
-                override fun onWakeUp(assistant: String) {
-                    showToastMessage("现在是${assistant}为您服务")
+                override fun onWakeUp(assistant: Action) {
+                    voiceSynthesizer.speak("我在")
+                    val launchIntent = packageManager.getLaunchIntentForPackage(XIAOAI_PACKAGENAME)
+                    if (launchIntent != null) {
+                        startActivityForResult(launchIntent, START_XIAOAI_REQUEST_CODE)//null pointer check in case package name was not found
+                    }
                 }
 
-                override fun onActionConfirm(action: String) {
+                override fun onActionConfirm(action: Action) {
                     showToastMessage("正在执行：$action")
-                    if (action.contains("开门")) {
-                        btConnectManager.sendMessage("A")
+                    when {
+                        action.name.contains("开门") -> garageDoorOpenerConnector.sendMessage("A")
+                        action.name.contains("关门") -> garageDoorOpenerConnector.sendMessage("A")
+                        action.name.contains("开灯") -> yeelightConnector.turn(true)
+                        action.name.contains("关灯") -> yeelightConnector.turn(false)
                     }
                 }
 
@@ -82,10 +90,9 @@ class MainActivity : Activity() {
                     metTextHint.text = "failed to start voice recognizer"
                 }
 
-                override fun onAction(keyWord: String) {
-                    val msg = "请说出密码来确认执行: $keyWord"
-                    metTextHint.text = msg
-                    showToastMessage(msg)
+                override fun onPendingConfirm(keyWord: Action) {
+                    metTextHint.text = "请说出密码来确认执行: ${keyWord.name}"
+                    showToastMessage("暗号是？")
                 }
             }
     )
@@ -111,29 +118,35 @@ class MainActivity : Activity() {
         }
 
         voiceRecognizerListener.init(Assets(this).syncAssets())
-        btConnectManager.init()
+        garageDoorOpenerConnector.init()
         voiceSynthesizer.init()
 
         mDevicesListView = findViewById(R.id.devicesListView) as ListView
-        mDevicesListView.adapter = btConnectManager.mBTArrayAdapter // assign model to view
+        mDevicesListView.adapter = garageDoorOpenerConnector.mBTArrayAdapter // assign model to view
         mDevicesListView.onItemClickListener = mDeviceClickListener
         mBluetoothStatus = findViewById(R.id.bluetoothStatus) as TextView
         mDiscoverBtn = findViewById(R.id.discover) as Button
-        mListPairedDevicesBtn = findViewById(R.id.PairedBtn) as Button
-        mReadBuffer = findViewById(R.id.readBuffer) as TextView
         mSendA = findViewById(R.id.sendA) as Button
 
-        mDiscoverBtn.setOnClickListener({ v -> btConnectManager.discover(v) })
-
-        mListPairedDevicesBtn.setOnClickListener({ v -> btConnectManager.listPairedDevices(v) })
+        mDiscoverBtn.setOnClickListener({ v ->
+            garageDoorOpenerConnector.discover(v)
+            yeelightConnector.discover()
+        })
 
         mSendA.setOnClickListener({
-            btConnectManager.sendMessage("A")
+            garageDoorOpenerConnector.sendMessage("A")
         })
+
+        mListView = findViewById(R.id.lightList) as ListView
+        mListView.adapter = yeelightConnector.mAdapter
+
+        mListView.onItemClickListener = AdapterView.OnItemClickListener { parent, view, position, id ->
+            yeelightConnector.connect(yeelightConnector.mAdapter.getItem(position) as HashMap<String, String>)
+        }
     }
 
     private val mDeviceClickListener = AdapterView.OnItemClickListener { av, v, arg2, arg3 ->
-        if (!btConnectManager.enabled()) {
+        if (!garageDoorOpenerConnector.enabled()) {
             Toast.makeText(baseContext, "Bluetooth not on", Toast.LENGTH_SHORT).show()
             return@OnItemClickListener
         }
@@ -144,7 +157,7 @@ class MainActivity : Activity() {
         val address = info.substring(info.length - 17)
         val name = info.substring(0, info.length - 17)
 
-        btConnectManager.asyncConnect(address, name)
+        garageDoorOpenerConnector.asyncConnect(address, name)
 
     }
 
@@ -166,6 +179,8 @@ class MainActivity : Activity() {
     public override fun onDestroy() {
         super.onDestroy()
         voiceRecognizerListener.destroy()
+        yeelightConnector.destroy()
+        garageDoorOpenerConnector.destory()
     }
 
     /**
@@ -175,6 +190,5 @@ class MainActivity : Activity() {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         voiceSynthesizer.speak(message)
     }
-
 
 }

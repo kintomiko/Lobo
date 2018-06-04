@@ -8,18 +8,31 @@ import edu.cmu.pocketsphinx.SpeechRecognizerSetup
 import java.io.File
 import java.io.IOException
 
+data class Action(
+        val name: String,
+        val isAssistant: Boolean,
+        val isSecured: Boolean
+)
+
 class VoiceCommandManager constructor(val commandListener: CommandListener): edu.cmu.pocketsphinx.RecognitionListener{
 
     val TAG = this.javaClass.canonicalName
 
-    private val kwSearch = "keyWord"
-    private val sSearch = "secret"
+    val kwSearch = "keyWord"
+    val sSearch = "secret"
     private val secretPhrase = "嘛哩嘛哩哄"
-    private val acceptableActions = listOf("芝麻开灯", "土豆开门", "芝麻关门", "土豆关灯")
-    private val acceptableAssistant = listOf("小林小林", "小黄小黄", "林小曦")
+    private val actions = listOf(
+            Action("芝麻开灯", false, false),
+            Action("土豆开门", false, true),
+            Action("芝麻关门", false, true),
+            Action("土豆关灯", false, false),
+            Action("小林小林", true, false),
+            Action("小黄小黄", true, false),
+            Action("林小曦", true, false)
+    )
+    var inited = false
 
-
-    private lateinit var currentAction: String
+    private lateinit var currentAction: Action
     private lateinit var recognizer: SpeechRecognizer
 
     override fun onResult(hypothesis: Hypothesis?) {
@@ -37,24 +50,28 @@ class VoiceCommandManager constructor(val commandListener: CommandListener): edu
     private fun onHandleMatch(hypstr: String) {
         val keyWord = hypstr.split(" ")[0]
 
-        when {
-        // to kw search
-            secretPhrase == keyWord -> {
-                commandListener.onActionConfirm(currentAction)
-                switchSearch(kwSearch)
-            }
+        if (secretPhrase == keyWord && recognizer.searchName == sSearch) {
+            commandListener.onActionConfirm(currentAction)
+            switchSearch(kwSearch)
+            return
+        }
         // to secret search
-            acceptableActions.contains(keyWord) -> {
-                currentAction = keyWord
-                commandListener.onAction(keyWord)
-                switchSearch(sSearch)
+        actions.find { it.name == keyWord }?.let {
+            when {
+                it.isAssistant -> {
+                    commandListener.onWakeUp(it)
+                    recognizer.stop()
+                }
+                it.isSecured -> {
+                    currentAction = it
+                    commandListener.onPendingConfirm(it)
+                    switchSearch(sSearch)
+                }
+                !it.isSecured -> {
+                    commandListener.onActionConfirm(it)
+                }
+                else -> switchSearch(kwSearch)
             }
-        // continue kw search
-            acceptableAssistant.contains(keyWord) -> {
-                commandListener.onWakeUp(keyWord)
-                switchSearch(kwSearch)
-            }
-            else -> switchSearch(kwSearch)
         }
 
     }
@@ -101,7 +118,7 @@ class VoiceCommandManager constructor(val commandListener: CommandListener): edu
         }
     }
 
-    private fun switchSearch(searchName: String) {
+    fun switchSearch(searchName: String) {
         recognizer.stop()
 
         if (kwSearch == searchName){
@@ -129,6 +146,7 @@ class VoiceCommandManager constructor(val commandListener: CommandListener): edu
 
         recognizer.addKeyphraseSearch(sSearch, secretPhrase)
 
+        inited = true
     }
 
     fun destroy() {
@@ -141,12 +159,14 @@ class VoiceCommandManager constructor(val commandListener: CommandListener): edu
 }
 
 interface CommandListener{
-    fun onAction(action: String)
 
-    fun onWakeUp(assistant: String)
+    fun onPendingConfirm(action: Action)
 
-    fun onActionConfirm(action: String)
+    fun onWakeUp(assistant: Action)
+
+    fun onActionConfirm(action: Action)
 
     fun onErrorSetup()
+
     fun onListening()
 }

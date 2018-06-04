@@ -1,4 +1,4 @@
-package com.huanghuangnz.lobo.bluetooth
+package com.huanghuangnz.lobo.connectors
 
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
@@ -26,7 +26,14 @@ import java.util.*
 private val BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB") // "random" unique identifier
 private const val MESSAGE_READ = 2 // used in bluetooth handler to identify message update
 private const val CONNECTING_STATUS = 3 // used in bluetooth handler to identify message status
-class BluetoothAsyncManager constructor(val context: Context, bluetoothEventListener: BluetoothEventListener){
+class GarageDoorOpenerConnector constructor(val context: Context, garageDoorOpenerConnectListener: GarageDoorOpenerConnectListener): DeviceConnector{
+    override fun turn(on: Boolean) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun toggle() {
+        sendMessage("A")
+    }
 
     private val TAG = this.javaClass.canonicalName
     //Bluetooth components
@@ -36,7 +43,7 @@ class BluetoothAsyncManager constructor(val context: Context, bluetoothEventList
     private lateinit var mBTSocket: BluetoothSocket
     private var mConnectedThread: ConnectedThread? = null // bluetooth background worker thread to send and receive data
 
-    fun init(){
+    override fun init(){
         mBTArrayAdapter = ArrayAdapter(context, android.R.layout.simple_list_item_1)
         mBTAdapter = BluetoothAdapter.getDefaultAdapter() // get a handle on the bluetooth radio
     }
@@ -52,14 +59,14 @@ class BluetoothAsyncManager constructor(val context: Context, bluetoothEventList
                     throw RuntimeException(e)
                 }
 
-                bluetoothEventListener.onReadMessage(readMessage)
+                garageDoorOpenerConnectListener.onReadMessage(readMessage)
             }
 
             if (msg.what == CONNECTING_STATUS) {
                 if (msg.arg1 == 1)
-                    bluetoothEventListener.onConnect(msg.obj)
+                    garageDoorOpenerConnectListener.onConnect(msg.obj)
                 else
-                    bluetoothEventListener.onConnectionFailed(msg)
+                    garageDoorOpenerConnectListener.onConnectionFailed(msg)
             }
         }
     }
@@ -104,6 +111,13 @@ class BluetoothAsyncManager constructor(val context: Context, bluetoothEventList
                 Toast.makeText(context, "Bluetooth not on", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    fun destory(){
+        if (mBTAdapter.isDiscovering) {
+            mBTAdapter.cancelDiscovery()
+        }
+        mConnectedThread?.destory()
     }
 
     @Throws(IOException::class)
@@ -223,7 +237,7 @@ class BluetoothAsyncManager constructor(val context: Context, bluetoothEventList
         }
 
         /* Call this from the main activity to shutdown the connection */
-        fun cancel() {
+        fun destory() {
             try {
                 mmSocket.close()
             } catch (e: IOException) {
@@ -234,7 +248,7 @@ class BluetoothAsyncManager constructor(val context: Context, bluetoothEventList
 
 }
 
-interface BluetoothEventListener {
+interface GarageDoorOpenerConnectListener {
     fun onReadMessage(readMessage: String)
     fun onConnect(obj: Any)
     fun onConnectionFailed(msg: Message)

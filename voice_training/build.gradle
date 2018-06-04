@@ -146,5 +146,10 @@ task updateAppModel(dependsOn: buildAdaptModel){
             from "tmp/mllr_matrix"
             into '../models/src/main/assets/sync'
         }
+
+        copy {
+            from "tmp/zh_broadcastnews_utf8.dic"
+            into '../models/src/main/assets/sync'
+        }
     }
 }

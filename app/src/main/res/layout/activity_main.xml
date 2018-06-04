@@ -14,47 +14,50 @@
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:typeface="sans" />
 
-    <Button
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Discover New Devices"
-        android:id="@+id/discover" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-    <Button
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="搜索车库门"
+            android:id="@+id/discover" />
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="开/关门"
+            android:id="@+id/sendA"/>
+
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/devicesListView"
+            android:choiceMode="singleChoice" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="车库门状态"
+            android:id="@+id/bluetoothStatus"
+            android:ellipsize="end"
+            android:maxLines="1"/>
+
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Show paired Devices"
-        android:id="@+id/PairedBtn"/>
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+        <ListView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/lightList"
+            android:choiceMode="singleChoice" />
 
-    <Button
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Send A"
-        android:id="@+id/sendA"/>
-
-    <ListView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/devicesListView"
-        android:choiceMode="singleChoice" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_weight="0.9"
-        android:text="Bluetooth Status"
-        android:id="@+id/bluetoothStatus"
-        android:ellipsize="end"
-        android:maxLines="1"/>
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.9"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:text="Read Buffer"
-        android:id="@+id/readBuffer"/>
+    </LinearLayout>
 
 
 </LinearLayout>
